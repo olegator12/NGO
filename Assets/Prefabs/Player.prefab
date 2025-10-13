@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 1399508880726688338}
   - component: {fileID: 1689921328606379401}
   - component: {fileID: 4963178887097623792}
-  - component: {fileID: -2758480918768999837}
   - component: {fileID: -1015574173734961423}
+  - component: {fileID: 7565485785092042971}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -117,19 +117,6 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &-2758480918768999837
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7161002860939296243}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 527fe78be89d48943bc0d55ee9c51081, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkTransformTest
-  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &-1015574173734961423
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -176,3 +163,18 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &7565485785092042971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7161002860939296243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1e70aa782a26d5418fab29bdff5d5a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HelloWorld.HelloWorldPlayer
+  ShowTopMostFoldoutHeaderGroup: 1
+  Position:
+    m_InternalValue: {x: 0, y: 0, z: 0}
