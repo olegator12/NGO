@@ -1,6 +1,8 @@
-﻿using Cinemachine;
+﻿using System;
+using Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
+using Random = UnityEngine.Random;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -16,7 +18,10 @@ namespace Triwoinmag
 #endif
     public class CharacterMovement : NetworkBehaviour
     {
-        [Header("Player")] [Tooltip("Move speed of the character in m/s")]
+        [Header("Player")] [SerializeField] private PlayerMoveState _playerMoveState;
+        public PlayerMoveState PlayerMoveState => _playerMoveState;
+
+        [Tooltip("Move speed of the character in m/s")]
         public float MoveSpeed = 2.0f;
 
         [Tooltip("Sprint speed of the character in m/s")]
@@ -96,11 +101,23 @@ namespace Triwoinmag
         private int _animIDFreeFall;
         private int _animIDMotionSpeed;
 
+        //Abilities
+        [SerializeField] private bool _executing;
+        [SerializeField] private Vector3 _hookShotTargetPos;
+        [SerializeField] private Vector3 _momentumAfterSpecialMovement;
+
+        //Delegates
+        public Action<Vector3> StartExecutingHookshot;
+        public Action StopExecutingHookshot;
+
+        //Links
+        [SerializeField] private AbilityMoveHookshot _abilityMoveHookshot;
+
 #if ENABLE_INPUT_SYSTEM
         private PlayerInput _playerInput;
 #endif
         private Animator _animator;
-        public UnityEngine.CharacterController _controller;
+        private UnityEngine.CharacterController _controller;
         private ClientPlayerInput _input;
         private GameObject _mainCamera;
         private CinemachineVirtualCamera _cineCamera;
@@ -165,18 +182,82 @@ namespace Triwoinmag
             _cineCamera.Follow = CinemachineCameraTarget.transform;
         }
 
+        public override void OnDestroy()
+        {
+            base.OnDestroy();
+        }
+
         private void Update()
         {
             _hasAnimator = TryGetComponent(out _animator);
 
-            JumpAndGravity();
-            GroundedCheck();
-            Move();
+            if (_playerMoveState == PlayerMoveState.Normal)
+            {
+                JumpAndGravity();
+                GroundedCheck();
+                Move();
+            }
+            else if (_playerMoveState == PlayerMoveState.ExecutingHookshot)
+            {
+                ExecuteHookshot(_hookShotTargetPos);
+            }
         }
 
         private void LateUpdate()
         {
             CameraRotation();
+        }
+
+        //Abilities
+        public void SwitchHookshot()
+        {
+            if (_playerMoveState != PlayerMoveState.ExecutingHookshot)
+            {
+                _hookShotTargetPos = _abilityMoveHookshot.CheckFireHookshot();
+
+                if (_hookShotTargetPos != Vector3.zero)
+                {
+                    StartHookshot(_hookShotTargetPos);
+                }
+            }
+            else if (_playerMoveState == PlayerMoveState.ExecutingHookshot)
+            {
+                StopHookshot(true);
+            }
+        }
+
+        private void ExecuteHookshot(Vector3 hookShotTargetPos)
+        {
+            var hookshotMoveVector = _abilityMoveHookshot.ExecuteHookshot(hookShotTargetPos);
+            if (hookshotMoveVector != Vector3.zero)
+            {
+                _controller.Move(hookshotMoveVector);
+            }
+            else
+            {
+                StopHookshot(false);
+            }
+        }
+
+        private void StartHookshot(Vector3 hookShotTargetPos)
+        {
+            _playerMoveState = PlayerMoveState.ExecutingHookshot;
+
+            _animator.SetBool(_animIDFreeFall, true);
+            _animator.SetBool(_animIDGrounded, false);
+
+            _verticalVelocity = 0;
+
+            StartExecutingHookshot?.Invoke(hookShotTargetPos);
+        }
+
+        private void StopHookshot(bool aborted)
+        {
+            _playerMoveState = PlayerMoveState.Normal;
+
+            _momentumAfterSpecialMovement = _abilityMoveHookshot.CalculateMomentumAfterHookshot(aborted);
+
+            StopExecutingHookshot?.Invoke();
         }
 
         private void AssignAnimationIDs()
@@ -226,7 +307,6 @@ namespace Triwoinmag
 
         private void Move()
         {
-
             if (!IsOwner)
             {
                 if (_hasAnimator)
@@ -234,8 +314,10 @@ namespace Triwoinmag
                     _animator.SetFloat(_animIDSpeed, _netVarAnimationBlend.Value);
                     _animator.SetFloat(_animIDMotionSpeed, _netVarInputMagnitude.Value);
                 }
+
                 return;
             }
+
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 
@@ -292,7 +374,18 @@ namespace Triwoinmag
 
             // move the player
             _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
-                             new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+                             new Vector3(_momentumAfterSpecialMovement.x,
+                                 _momentumAfterSpecialMovement.y + _verticalVelocity, _momentumAfterSpecialMovement.z) *
+                             Time.deltaTime);
+
+            if (_momentumAfterSpecialMovement.magnitude > 0f)
+            {
+                _momentumAfterSpecialMovement -= _momentumAfterSpecialMovement * 2 * Time.deltaTime;
+                if(_momentumAfterSpecialMovement.magnitude < 0.05f)
+                {
+                    _momentumAfterSpecialMovement = Vector3.zero;
+                }
+            }
 
             // update animator if using character
             if (_hasAnimator)
@@ -300,9 +393,9 @@ namespace Triwoinmag
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
             }
-            
+
             _netVarInputMagnitude.Value = inputMagnitude;
-            _netVarAnimationBlend.Value =  _animationBlend;
+            _netVarAnimationBlend.Value = _animationBlend;
         }
 
         private void JumpAndGravity()
@@ -317,7 +410,7 @@ namespace Triwoinmag
                 _animator.SetBool(_animIDFreeFall, !Grounded);
                 return;
             }
-            
+
             if (Grounded)
             {
                 // reset the fall timeout timer
@@ -427,5 +520,11 @@ namespace Triwoinmag
                     FootstepAudioVolume);
             }
         }
+    }
+
+    public enum PlayerMoveState
+    {
+        Normal,
+        ExecutingHookshot
     }
 }

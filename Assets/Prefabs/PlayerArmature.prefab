@@ -2238,6 +2238,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  _playerMoveState: 0
   MoveSpeed: 2
   SprintSpeed: 5.335
   RotationSmoothTime: 0.12
@@ -2270,6 +2271,9 @@ MonoBehaviour:
   BottomClamp: -30
   CameraAngleOverride: 0
   LockCameraPosition: 0
+  _executing: 0
+  _hookShotTargetPos: {x: 0, y: 0, z: 0}
+  _abilityMoveHookshot: {fileID: 1808500389387120369}
   _controller: {fileID: 0}
 --- !u!114 &1433552770509004596
 MonoBehaviour:
@@ -3146,8 +3150,6 @@ MonoBehaviour:
   _lineRenShot: {fileID: 1374017781359243801}
   Debugging: 0
   _testPrefab: {fileID: 0}
-  _executing: 0
-  _hookShotTargetPos: {x: 0, y: 0, z: 0}
 --- !u!120 &3006572046476194701 stripped
 LineRenderer:
   m_CorrespondingSourceObject: {fileID: 8495322112371600243, guid: ca1effe0cc0f9ed45b0576253d27af70, type: 3}
