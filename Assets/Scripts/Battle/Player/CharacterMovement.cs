@@ -10,11 +10,11 @@ using UnityEngine.InputSystem;
 
 namespace Triwoinmag
 {
-    [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(UnityEngine.CharacterController))]
 #if ENABLE_INPUT_SYSTEM
     [RequireComponent(typeof(PlayerInput))]
 #endif
-    public class ThirdPersonController : NetworkBehaviour
+    public class CharacterMovement : NetworkBehaviour
     {
         [Header("Player")] [Tooltip("Move speed of the character in m/s")]
         public float MoveSpeed = 2.0f;
@@ -100,7 +100,7 @@ namespace Triwoinmag
         private PlayerInput _playerInput;
 #endif
         private Animator _animator;
-        private CharacterController _controller;
+        public UnityEngine.CharacterController _controller;
         private ClientPlayerInput _input;
         private GameObject _mainCamera;
         private CinemachineVirtualCamera _cineCamera;
@@ -141,7 +141,7 @@ namespace Triwoinmag
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
 
             _hasAnimator = TryGetComponent(out _animator);
-            _controller = GetComponent<CharacterController>();
+            _controller = GetComponent<UnityEngine.CharacterController>();
             _input = GetComponent<ClientPlayerInput>();
 #if ENABLE_INPUT_SYSTEM
             _playerInput = GetComponent<PlayerInput>();
